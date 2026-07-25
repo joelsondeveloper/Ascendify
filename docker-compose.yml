@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ascendify-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ascendify
+      POSTGRES_PASSWORD: ascendify
+      POSTGRES_DB: ascendify
+    ports:
+      - "5432:5432"
+    volumes:
+      - ascendify_pgdata:/var/lib/postgresql/data
+
+volumes:
+  ascendify_pgdata:
