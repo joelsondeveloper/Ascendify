@@ -4,6 +4,8 @@ import {
   findHabitsBySubplotId,
   findSubplotById,
   registerCheckIn,
+  archiveHabit,
+  setHabitFreeze,
 } from "./habit.repository.js";
 import { addCoins } from "../character/character.service.js";
 import { checkAndCompleteSubplot } from "../subplot/subplot.service.js";
@@ -52,10 +54,11 @@ export async function checkInHabit(habitId: string, characterId: string) {
     throw new Error("HABIT_ARCHIVED");
   }
 
-  const { newStreak, alreadyCheckedIn } = calculateStreak(
+  const { newStreak, alreadyCheckedIn, freezeConsumed } = calculateStreak(
     habit.frequency,
     habit.currentStreak,
-    habit.lastCompletedAt
+    habit.lastCompletedAt,
+    habit.hasActiveFreeze
   );
 
   if (alreadyCheckedIn) {
@@ -66,6 +69,11 @@ export async function checkInHabit(habitId: string, characterId: string) {
   const consolidated = newStreak >= habit.streakGoal;
 
   const updated = await registerCheckIn(habitId, newStreak, newLongestStreak, consolidated);
+
+  if (freezeConsumed) {
+    await setHabitFreeze(habitId, false);
+  }
+
   await addCoins(characterId, habit.coinsReward);
 
   if (consolidated) {
@@ -73,4 +81,27 @@ export async function checkInHabit(habitId: string, characterId: string) {
   }
 
   return updated;
+}
+
+export async function archiveHabitById(habitId: string, characterId: string) {
+  const habit = await findHabitById(habitId);
+  if (!habit) {
+    throw new Error("HABIT_NOT_FOUND");
+  }
+
+  const updated = await archiveHabit(habitId);
+
+  // Arquivar pode liberar a conclusão da Subtrama (já que hábitos arquivados
+  // não bloqueiam mais a cascata)
+  await checkAndCompleteSubplot(habit.subplotId, characterId);
+
+  return updated;
+}
+
+export async function applyStreakFreeze(habitId: string) {
+  const habit = await findHabitById(habitId);
+  if (!habit) {
+    throw new Error("HABIT_NOT_FOUND");
+  }
+  return setHabitFreeze(habitId, true);
 }

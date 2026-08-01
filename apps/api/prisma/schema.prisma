@@ -24,12 +24,13 @@ model Character {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   chapters     Chapter[]
   achievements CharacterAchievement[]
+  shopItems    ShopItem[]
+  redemptions  RewardRedemption[]
+  inventory    CharacterInventoryItem[]
 }
-
-
 
 model Achievement {
   id          String  @id @default(cuid())
@@ -179,6 +180,7 @@ model Habit {
   currentStreak   Int            @default(0)
   longestStreak   Int            @default(0)
   consolidated    Boolean        @default(false)
+  hasActiveFreeze Boolean        @default(false)
   lastCompletedAt DateTime?
   isArchived      Boolean        @default(false)
   createdAt       DateTime       @default(now())
@@ -198,4 +200,55 @@ model HabitCompletion {
   completedAt DateTime @default(now())
 
   habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+}
+
+model ShopItem {
+  id           String        @id @default(cuid())
+  characterId  String?
+  type         ShopItemType
+  cosmeticKind CosmeticKind?
+  title        String
+  description  String?
+  effectType   String?
+  effectValue  String?
+  basePrice    Int
+  isArchived   Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+
+  character   Character?               @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  redemptions RewardRedemption[]
+  inventory   CharacterInventoryItem[]
+}
+
+enum ShopItemType {
+  REAL_LIFE
+  COSMETIC
+}
+
+enum CosmeticKind {
+  PERMANENT
+  CONSUMABLE
+}
+
+model RewardRedemption {
+  id          String   @id @default(cuid())
+  shopItemId  String
+  characterId String
+  pricePaid   Int
+  redeemedAt  DateTime @default(now())
+
+  shopItem  ShopItem  @relation(fields: [shopItemId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+}
+
+model CharacterInventoryItem {
+  id          String @id @default(cuid())
+  characterId String
+  shopItemId  String
+  quantity    Int    @default(0)
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  shopItem  ShopItem  @relation(fields: [shopItemId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, shopItemId])
 }

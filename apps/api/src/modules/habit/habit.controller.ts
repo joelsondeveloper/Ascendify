@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
-import { listHabits, createNewHabit, checkInHabit } from "./habit.service.js";
+import { listHabits, createNewHabit, checkInHabit, archiveHabitById } from "./habit.service.js";
 
 async function getCharacterId(userId: string) {
   const character = await prisma.character.findUnique({ where: { userId } });
@@ -62,6 +62,21 @@ export async function checkIn(req: Request, res: Response) {
       res.status(400).json({ error: "Este hábito está arquivado" });
       return;
     }
+    res.status(404).json({ error: "Hábito não encontrado" });
+  }
+}
+
+export async function archive(req: Request, res: Response) {
+  const characterId = await getCharacterId(req.userId!);
+  if (!characterId) {
+    res.status(404).json({ error: "Personagem não encontrado" });
+    return;
+  }
+
+  try {
+    const habit = await archiveHabitById(req.params.id!, characterId);
+    res.json(habit);
+  } catch {
     res.status(404).json({ error: "Hábito não encontrado" });
   }
 }

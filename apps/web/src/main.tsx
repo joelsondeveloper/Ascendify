@@ -7,6 +7,7 @@ import { SignUp } from "./pages/SignUp.tsx";
 import { Login } from "./pages/Login.tsx";
 import { Dashboard } from "./pages/Dashboard.tsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
+import { Shop } from "./pages/Shop.tsx";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,14 @@ createRoot(document.getElementById("root")!).render(
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shop"
+            element={
+              <ProtectedRoute>
+                <Shop />
               </ProtectedRoute>
             }
           />

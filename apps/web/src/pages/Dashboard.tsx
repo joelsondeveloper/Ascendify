@@ -1,29 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SystemPanel } from "../components/SystemPanel";
 import { Button } from "../components/Button";
+import { Link } from "react-router";
+import { ChapterView } from "../components/ChapterView";
+import { Modal } from "../components/Modal";
+import { CreateChapterForm } from "../components/CreateChapterForm";
 import { authClient } from "../lib/auth-client";
-
-interface Character {
-  id: string;
-  name: string;
-  level: number;
-  currentXp: number;
-  totalXp: number;
-  title: string | null;
-}
+import { useActiveChapter } from "../hooks/useActiveChapter";
+import { useCharacter } from "../hooks/useCharacter";
 
 export function Dashboard() {
-  const [character, setCharacter] = useState<Character | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("http://localhost:3333/api/character/me", {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => setCharacter(data))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: character, isLoading: loading } = useCharacter();
+  const { data: chapter, isLoading: chapterLoading } = useActiveChapter();
+  const [showChapterModal, setShowChapterModal] = useState(false);
 
   async function handleLogout() {
     await authClient.signOut();
@@ -31,11 +20,13 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex flex-col items-center px-4 py-8 gap-6">
       <div className="w-full max-w-sm">
         <SystemPanel eyebrow="Character">
           {loading ? (
-            <p className="text-text-muted font-body">Carregando personagem...</p>
+            <p className="text-text-muted font-body">
+              Carregando personagem...
+            </p>
           ) : character ? (
             <>
               <h1 className="font-display text-2xl font-semibold">
@@ -61,9 +52,22 @@ export function Dashboard() {
                 </span>
               </div>
 
+              <div className="mt-2 flex items-center justify-between font-mono">
+                <span className="text-text-muted text-sm">Coins</span>
+                <span className="text-accent-xp text-sm">
+                  {character.coins}
+                </span>
+              </div>
+
               <Button onClick={handleLogout} className="mt-6 w-full">
                 Sair
               </Button>
+              <Link
+                to="/shop"
+                className="block text-center text-xs font-display uppercase tracking-wide text-accent hover:underline mt-3"
+              >
+                Ir para Loja
+              </Link>
             </>
           ) : (
             <p className="text-danger font-body">
@@ -72,6 +76,34 @@ export function Dashboard() {
           )}
         </SystemPanel>
       </div>
+
+      <div className="w-full max-w-sm">
+        {chapterLoading ? (
+          <p className="text-text-muted font-body text-center">
+            Carregando capítulo...
+          </p>
+        ) : chapter ? (
+          <ChapterView chapter={chapter} />
+        ) : (
+          <SystemPanel eyebrow="Chapter">
+            <p className="text-text-muted font-body text-center">
+              Nenhum capítulo em progresso.
+            </p>
+            <Button
+              onClick={() => setShowChapterModal(true)}
+              className="w-full mt-4"
+            >
+              Iniciar Novo Capítulo
+            </Button>
+          </SystemPanel>
+        )}
+      </div>
+
+      {showChapterModal && (
+        <Modal eyebrow="New Chapter" onClose={() => setShowChapterModal(false)}>
+          <CreateChapterForm onDone={() => setShowChapterModal(false)} />
+        </Modal>
+      )}
     </div>
   );
 }

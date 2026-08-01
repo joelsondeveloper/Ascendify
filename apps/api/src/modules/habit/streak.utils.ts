@@ -25,16 +25,18 @@ function weeksBetween(a: Date, b: Date): number {
 export interface StreakResult {
   newStreak: number;
   alreadyCheckedIn: boolean;
+  freezeConsumed: boolean;
 }
 
 export function calculateStreak(
   frequency: "DAILY" | "WEEKLY",
   currentStreak: number,
   lastCompletedAt: Date | null,
+  hasActiveFreeze: boolean,
   now: Date = new Date()
 ): StreakResult {
   if (!lastCompletedAt) {
-    return { newStreak: 1, alreadyCheckedIn: false };
+    return { newStreak: 1, alreadyCheckedIn: false, freezeConsumed: false };
   }
 
   const diff =
@@ -43,13 +45,17 @@ export function calculateStreak(
       : weeksBetween(now, lastCompletedAt);
 
   if (diff === 0) {
-    return { newStreak: currentStreak, alreadyCheckedIn: true };
+    return { newStreak: currentStreak, alreadyCheckedIn: true, freezeConsumed: false };
   }
 
   if (diff === 1) {
-    return { newStreak: currentStreak + 1, alreadyCheckedIn: false };
+    return { newStreak: currentStreak + 1, alreadyCheckedIn: false, freezeConsumed: false };
   }
 
-  // diff > 1 (ou negativo, o que não deveria acontecer): streak quebrou
-  return { newStreak: 1, alreadyCheckedIn: false };
+  // diff > 1: streak quebraria, a menos que haja freeze ativo
+  if (hasActiveFreeze) {
+    return { newStreak: currentStreak + 1, alreadyCheckedIn: false, freezeConsumed: true };
+  }
+
+  return { newStreak: 1, alreadyCheckedIn: false, freezeConsumed: false };
 }

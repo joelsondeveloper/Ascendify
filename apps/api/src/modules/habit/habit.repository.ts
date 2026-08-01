@@ -58,3 +58,17 @@ export async function registerCheckIn(
 
   return habit;
 }
+
+export function archiveHabit(id: string) {
+  return prisma.habit.update({
+    where: { id },
+    data: { isArchived: true },
+  });
+}
+
+export function setHabitFreeze(id: string, value: boolean) {
+  return prisma.habit.update({
+    where: { id },
+    data: { hasActiveFreeze: value },
+  });
+}
